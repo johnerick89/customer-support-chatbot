@@ -1,139 +1,25 @@
 # Customer Support Chatbot
 
-## Architecture
+Prototype for **Meridian Electronics** customer support: sign-in, then a streaming chat that (in the full design) calls a **FastAPI** backend and an **MCP** order/product service.
 
-### 1. High-Level Layout (Top → Bottom Flow)
+## Stack
 
-[ User Browser ]
-│
-▼
-Next.js (Vercel)
-├── /login page — email + PIN form
-└── /chat page — SSE chat interface (protected)
-│
-│ POST /stream (SSE)
-│ POST /auth/verify
-▼
-FastAPI (Vercel)
-├── POST /auth/verify → calls verify_customer_pin via MCP
-├── POST /stream → runs agent with customer_id in context
-└── no database — customer_id held in frontend state only
-│
-▼
-MCPServerStreamableHttp
-└── https://order-mcp-74afyau24q-uc.a.run.app/mcp
+- **Frontend:** Next.js (App Router), Tailwind — `frontend/`
+- **API:** FastAPI — `api/`
+- **Integrations:** MCP server (Streamable HTTP) for catalog, customers, and orders — see `task.md`
 
-### 2. Frontend Layer (Next.js)
+## Documentation
 
-[ Next.js (Vercel) ]
-├── /login page
-│ - email + PIN form
-│ - calls /auth/verify
-│
-└── /chat page (protected) - shows customer_name - chat interface - sends messages to /stream - renders SSE responses - logout (clears state)
+- **[DESIGN.md](DESIGN.md)** — architecture, auth/chat flows, MCP tool surface, and agent guidelines.
+- **`task.md`** — assessment brief, constraints, and deliverables.
 
-#### Frontend State
+## Quick start (local)
 
-- customer_id
-- customer_name
-  (storage: React state or sessionStorage)
+1. **API** — from `api/`: create a venv, `pip install -r requirements.txt`, then `uvicorn index:app --reload --port 8000`.
+2. **Frontend** — from `frontend/`: `npm install`, `npm run dev`. Optional `frontend/.env.local`: `API_ORIGIN=http://127.0.0.1:8000` (default).
 
-### 3.Backend Layer (FastAPI)
+The Next dev server rewrites `/auth/verify` and `/api/stream` to the FastAPI origin so the browser stays same-origin.
 
-[ FastAPI Backend ]
-├── POST /auth/verify
-│ - receives email + PIN
-│ - calls MCP: verify_customer_pin
-│ - returns customer_id + name
-│
-└── POST /stream (SSE) - receives message + customer_id - injects into agent context - runs LLM agent - streams response back
+## Deploy
 
-- Backend to be Stateless for now :
-- No DB
-- No sessions
-- No JWT (prototype only)
-
-### 4. MCP Layer
-
-[ MCP Server ]
-├── Product Tools
-│ - list_products
-│ - search_products
-│ - get_product
-│
-├── Customer Tools
-│ - verify_customer_pin
-│ - get_customer
-│
-└── Order Tools
-| - list_orders
-| - get_order
-| - create_order
-
-### 5. Authentication Flow
-
-1. User → /login (email + PIN)
-2. Frontend → POST /auth/verify
-3. Backend → MCP: verify_customer_pin
-4. MCP → Backend: customer_id, name
-5. Backend → Frontend: customer context
-6. Frontend stores state
-
-### 6. Chat / Agent Flow
-
-1. User sends message
-2. Frontend → POST /stream (with customer_id)
-3. Backend:
-   - builds agent context
-   - calls LLM
-4. Agent decides:
-   → call MCP tool OR respond directly
-5. MCP executes tool (if needed)
-6. Response streamed back (SSE)
-7. Frontend renders in real-time
-
-### 7. Agent Design
-
-[ LLM Agent ]
-
-Intent → Tool Mapping:
-
-- “Find products” → search_products / list_products
-- “View product details” → get_product
-- “My orders” → list_orders (with customer_id)
-- “Order details” → get_order
-- “Buy / place order” → create_order
-
-Agent Rules:
-
-- Always include customer_id for order-related queries
-- Never call create_order without explicit user confirmation
-- Use search_products for vague queries, get_product for exact SKU
-- Validate product details before placing an order
-- Prefer MCP tools over generating answers
-
-#### 8. Realistic Chat flow
-
-User: “I need a monitor”
-
-→ Agent:
-calls search_products(query="monitor")
-
-→ MCP returns products
-
-→ Agent summarizes options
-
-User: “I want the Dell 27-inch one”
-
-→ Agent:
-calls get_product(sku="MON-XXXX")
-
-→ Confirms details
-
-User: “Buy 2”
-
-→ Agent:
-asks for confirmation
-
-→ On confirm:
-calls create_order(...)
+Set **`API_ORIGIN`** on the Next deployment to your live FastAPI base URL. Repo **`vercel.json`** configures the Next build; align Python routing and env vars with how you host `api/`.
