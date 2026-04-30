@@ -39,8 +39,12 @@ Local dev: Next rewrites `/auth/verify` and `/api/stream` to `API_ORIGIN` (defau
 
 ## 3. Backend layer (FastAPI)
 
+- **Runtime:** Python **3.11** (`.python-version` and `requires-python` in repo-root `pyproject.toml`).
+- **Dependencies:** **[uv](https://docs.astral.sh/uv/)** at repo root (`uv sync`). Lockfile: `uv.lock`.
+- **Layout:** Python package **`backend/`** (`main.py`, `schemas.py`, `routers/`). **`api/index.py`** is the only file under `api/` — ASGI entry for Vercel that imports `backend.main:app`.
+- **`GET /health`** — liveness probe.
 - **`POST /auth/verify`** — body: `{ email, pin }`; returns customer-shaped JSON for the UI (prototype vs production MCP-backed verify is implementation-specific).
-- **`POST /stream`** — body includes message + `customer_id`; streams tokens/text back to the client.
+- **`POST /stream`** — body: `{ message, customer_id? }`; streams tokens/text back to the client.
 
 ### Prototype constraints
 
