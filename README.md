@@ -1,25 +1,33 @@
 # Customer Support Chatbot
 
-Prototype for **Meridian Electronics** customer support: sign-in, then a streaming chat that (in the full design) calls a **FastAPI** backend and an **MCP** order/product service.
-
-## Stack
-
-- **Frontend:** Next.js (App Router), Tailwind — `frontend/`
-- **API:** FastAPI — `api/`
-- **Integrations:** MCP server (Streamable HTTP) for catalog, customers, and orders — see `task.md`
+Meridian Electronics prototype: **Next.js** UI + **FastAPI** (`backend`) on **Python 3.11**, deployable on **Vercel**.
 
 ## Documentation
 
-- **[DESIGN.md](DESIGN.md)** — architecture, auth/chat flows, MCP tool surface, and agent guidelines.
-- **`task.md`** — assessment brief, constraints, and deliverables.
+- **[DESIGN.md](DESIGN.md)** — architecture and flows  
+- **[task.md](task.md)** — assessment brief  
 
-## Quick start (local)
+## Local development
 
-1. **API** — from `api/`: create a venv, `pip install -r requirements.txt`, then `uvicorn index:app --reload --port 8000`.
-2. **Frontend** — from `frontend/`: `npm install`, `npm run dev`. Optional `frontend/.env.local`: `API_ORIGIN=http://127.0.0.1:8000` (default).
+1. **Python (API)** — from repo root:
 
-The Next dev server rewrites `/auth/verify` and `/api/stream` to the FastAPI origin so the browser stays same-origin.
+   ```bash
+   uv sync
+   uv run uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+   ```
 
-## Deploy
+2. **Next.js** — in another terminal:
 
-Set **`API_ORIGIN`** on the Next deployment to your live FastAPI base URL. Repo **`vercel.json`** configures the Next build; align Python routing and env vars with how you host `api/`.
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+Next rewrites `/auth/verify` and `/api/stream` to `http://127.0.0.1:8000` by default. Override with **`API_ORIGIN`** in `.env.local` (no trailing slash).
+
+## Deploy on Vercel
+
+- **Same project:** leave **`API_ORIGIN` unset**. Next (see `next.config.ts`) proxies auth and chat to the Python serverless entry **`api/index.py`**, which imports **`backend.main:app`**.  
+- **Separate API:** set **`API_ORIGIN`** to that server’s base URL.
+
+Root **`vercel.json`** runs `npm install` / `npm run build` and configures Python **3.11** for `api/**/*.py`.
