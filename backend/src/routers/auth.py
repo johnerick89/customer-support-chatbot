@@ -16,7 +16,6 @@ router = APIRouter()
 
 
 def _prototype_customer(email: str) -> dict[str, str]:
-    """Only used when AUTH_MCP_STUB=1 (no MCP / offline demos)."""
     local = email.split("@", 1)[0].replace(".", " ").strip() or "Customer"
     name = local.title()
     digest = hashlib.sha256(email.encode()).hexdigest()[:12]

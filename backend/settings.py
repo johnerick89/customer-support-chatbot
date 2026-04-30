@@ -1,4 +1,4 @@
-"""Application settings from environment (see `.env` at repo root)."""
+"""Application settings from environment"""
 
 from __future__ import annotations
 

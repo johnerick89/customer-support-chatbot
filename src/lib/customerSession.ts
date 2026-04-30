@@ -2,7 +2,6 @@ export const CUSTOMER_STORAGE_KEY = "customer";
 
 const SESSION_EVENT = "meridian-customer-session";
 
-/** Call after same-tab `sessionStorage` writes/removes so `useSyncExternalStore` subscribers update. */
 export function notifyCustomerSessionChanged() {
   window.dispatchEvent(new CustomEvent(SESSION_EVENT));
 }
