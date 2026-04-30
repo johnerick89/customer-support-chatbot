@@ -3,11 +3,12 @@ name = "meridian-chatbot-backend"
 version = "0.1.0"
 description = "FastAPI application: auth, streaming chat, future MCP agent (DESIGN.md)."
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.11,<3.13"
 dependencies = [
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.32.0",
   "pydantic>=2.0.0",
+  "pydantic-settings>=2.0.0",
   "openai-agents>=0.0.19",
   "openai>=1.59.0",
 ]

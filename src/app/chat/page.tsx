@@ -7,6 +7,7 @@ import {
   notifyCustomerSessionChanged,
   subscribeCustomerJson,
 } from "@/lib/customerSession";
+import { ChatMessage } from "@/types/chat";
 import { Customer } from "@/types/customer";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore } from "react";
@@ -42,7 +43,7 @@ export default function Chat() {
     }
   }, [customerJson]);
 
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -62,15 +63,21 @@ export default function Chat() {
       return;
     }
 
+    const history = messages
+      .filter((m) => m.content.trim().length > 0)
+      .map((m) => ({ role: m.role, content: m.content }));
+
     setSending(true);
     const res = await fetch("/api/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: trimmed,
+        history,
         customer_id: customerId.trim(),
         customer_name: customer?.name ?? null,
         customer_email: customer?.email ?? null,
+        customer_role: customer?.role ?? null,
       }),
     });
 
@@ -86,7 +93,11 @@ export default function Chat() {
     const decoder = new TextDecoder();
     let text = "";
 
-    setMessages((prev) => [...prev, ""]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: trimmed },
+      { role: "assistant", content: "" },
+    ]);
 
     try {
       while (true) {
@@ -94,7 +105,14 @@ export default function Chat() {
         if (done) break;
 
         text += decoder.decode(value);
-        setMessages((prev) => [...prev.slice(0, -1), text]);
+        setMessages((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (last?.role === "assistant") {
+            next[next.length - 1] = { role: "assistant", content: text };
+          }
+          return next;
+        });
       }
     } finally {
       setSending(false);
@@ -121,6 +139,11 @@ export default function Chat() {
               </p>
               <h1 className="truncate text-lg font-semibold tracking-tight">
                 Hi, {displayName}
+                {customer?.role ? (
+                  <span className="ml-2 text-xs font-normal normal-case text-zinc-500 dark:text-zinc-400">
+                    ({customer.role})
+                  </span>
+                ) : null}
               </h1>
             </div>
           </div>
@@ -149,9 +172,22 @@ export default function Chat() {
               </div>
             ) : (
               messages.map((m, i) => (
-                <div key={i} className="flex justify-start">
-                  <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-zinc-100 bg-zinc-50 px-4 py-3 text-sm leading-relaxed text-zinc-800 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-100">
-                    <p className="whitespace-pre-wrap wrap-break-word">{m}</p>
+                <div
+                  key={i}
+                  className={
+                    m.role === "user" ? "flex justify-end" : "flex justify-start"
+                  }
+                >
+                  <div
+                    className={
+                      m.role === "user"
+                        ? "max-w-[92%] rounded-2xl rounded-tr-md border border-violet-200/80 bg-violet-50 px-4 py-3 text-sm leading-relaxed text-zinc-900 shadow-sm dark:border-violet-500/30 dark:bg-violet-950/50 dark:text-zinc-50"
+                        : "max-w-[92%] rounded-2xl rounded-tl-md border border-zinc-100 bg-zinc-50 px-4 py-3 text-sm leading-relaxed text-zinc-800 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-100"
+                    }
+                  >
+                    <p className="whitespace-pre-wrap wrap-break-word">
+                      {m.content || (m.role === "assistant" ? "…" : "")}
+                    </p>
                   </div>
                 </div>
               ))
