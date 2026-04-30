@@ -2,11 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "npm install",
-  "buildCommand": "npm run build",
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "python3.11",
-      "excludeFiles": "{.git/**,.next/**,node_modules/**,**/__pycache__/**,backend/.venv/**,backend/.env,backend/.env.*,**/*.md,public/**}"
-    }
-  }
+  "buildCommand": "npm run build"
 }

@@ -1,0 +1,6 @@
+# Python — paths are relative to backend/; ** matches nested packages
+**/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
